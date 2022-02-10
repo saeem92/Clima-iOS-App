@@ -19,6 +19,5 @@ class WeatherViewController: UIViewController {
         // Do any additional setup after loading the view.
     }
 
-
 }
 
