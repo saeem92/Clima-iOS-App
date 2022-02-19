@@ -17,6 +17,8 @@ class WeatherViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var cityLabel: UILabel!
     @IBOutlet weak var searchTextField: UITextField!
     
+    var weatherManager = WeatherManager()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -69,8 +71,11 @@ class WeatherViewController: UIViewController, UITextFieldDelegate {
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         // Use searchTextField.text to get the weather for that city.
-        searchTextField.text = ""
-    }
+        
+        if let city = searchTextField.text{
+            weatherManager.fetchWeather(cityName: city)
+        }
+    } // As this is an optional string I am passing over to my WeatherManager a definite string instead of an optional string so I am using "if let" to optionally unwrap
     // The above function is used to stop editing and clear the search when we have finsished editing or entering a city name and when we hit search or go it's gonna clear the search label so that we can enter a new city name next time.
 }
 
