@@ -8,16 +8,25 @@
 
 import Foundation
 
+// Creating a protocol below
+protocol WeatherManagerDelegate {
+    func didUpdateWeather(_ weatherManager: WeatherManager, weather: WeatherModel)
+    func didFailWithError(error: Error)
+    // Above we have created another delegate method which is going to help to be able to pass errors out of the weather manager
+}
+
 struct WeatherManager {
     let weatherURL =
     "https://api.openweathermap.org/data/2.5/weather?appid=731129fb13e8f3b2cf43ee8aba885de7&units=metric"
     
+    var delegate: WeatherManagerDelegate?
+    
     func fetchWeather(cityName: String) {
         let urlString = "\(weatherURL)&q=\(cityName)"
-        self.performRequest(urlString: urlString)
+        performRequest(with: urlString)
     }
     
-    func performRequest(urlString: String){
+    func performRequest(with urlString: String){
         //1. Create a URL
         
         if let url = URL(string: urlString){
@@ -29,11 +38,14 @@ struct WeatherManager {
             //3. Give the session a task
             let task = session.dataTask(with: url) { (data, response, error) in
                 if error != nil {
-                    print(error!)
+                    self.delegate?.didFailWithError(error: error!)
                     return // This is helping us to use our anonymous function here which is termed as closure in swift.
                 }
                 if let safeData = data {
-                    self.parseJSON(weatherData: safeData) // INSIDE THE CLOSURE THE RULE IS WE MUST ADD THE WORD SELF IF WE ARE CALLING A METHOD FROM THE CURRENT CLASS.
+                    
+                    if let weather = self.parseJSON(weatherData: safeData) { // INSIDE THE CLOSURE THE RULE IS WE MUST ADD THE WORD SELF IF WE ARE CALLING A METHOD FROM THE CURRENT CLASS.
+                        self.delegate?.didUpdateWeather(self, weather: weather)
+                    }
                 }
             }
             //4. Start the task
@@ -45,7 +57,7 @@ struct WeatherManager {
         
     }
     
-    func parseJSON(weatherData: Data){
+    func parseJSON(weatherData: Data) -> WeatherModel? {
         let decoder = JSONDecoder() // JSONDecoder is an object that can decode json.
         do {
        let decodedData = try decoder.decode(WeatherData.self, from: weatherData)
@@ -54,11 +66,14 @@ struct WeatherManager {
             let name = decodedData.name
             
             let weather = WeatherModel(conditionId: id, cityName: name, temperature: temp)
+            return weather
             
-            print(weather.conditionName)
         } catch {
-            print(error)
+            delegate?.didFailWithError(error: error)
+            return nil
         }
-    }
     
+    }
 }
+    
+

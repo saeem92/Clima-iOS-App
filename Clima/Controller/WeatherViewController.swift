@@ -7,8 +7,9 @@
 //
 
 import UIKit
+import CoreLocation
 
-class WeatherViewController: UIViewController, UITextFieldDelegate {
+class WeatherViewController: UIViewController {
 // We have added UITextFieldDelegate in the above code to make the software keyboard behave the sameway when we click on the go button as the search button in the app.
 // UITextFieldDelegate allow our class, our weatherViewController to manage the editing and validation of the text in a TextField.
     
@@ -18,11 +19,18 @@ class WeatherViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var searchTextField: UITextField!
     
     var weatherManager = WeatherManager()
-    
+    let locationManager = CLLocationManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()  // This will ask user for their permission to get their location.
+        locationManager.requestLocation()
+        
+        
+        
+        weatherManager.delegate = self
         searchTextField.delegate = self
         // Here this line of code is saying that the textField should report back to our ViewController for example our Textfield will handle the task of our user entering text. When user Intereacts with our textfield.
         // So when user type something then textfield will notify the viewController on what's Happening
@@ -31,6 +39,12 @@ class WeatherViewController: UIViewController, UITextFieldDelegate {
         // Self refers to the currentViewcontroller
         // By adding UITextFieldDelegate above and searchTextField.delegate = self , this is allowing us to do these two steps is we can now create a method called textfieldShouldReturn.....
     }
+}
+
+//MARK: - UITextFieldDelegate
+
+
+extension WeatherViewController: UITextFieldDelegate {
     @IBAction func searchPressed(_ sender: UIButton) {
         searchTextField.endEditing(true)
         // Here we are using the endediting so when we click on search button dismiss our current action or keyboard.
@@ -75,7 +89,41 @@ class WeatherViewController: UIViewController, UITextFieldDelegate {
         if let city = searchTextField.text{
             weatherManager.fetchWeather(cityName: city)
         }
+        searchTextField.text = ""
     } // As this is an optional string I am passing over to my WeatherManager a definite string instead of an optional string so I am using "if let" to optionally unwrap
     // The above function is used to stop editing and clear the search when we have finsished editing or entering a city name and when we hit search or go it's gonna clear the search label so that we can enter a new city name next time.
+  }
+
+//MARK: - WeatherManagerDelegate
+
+extension WeatherViewController: WeatherManagerDelegate {
+    
+    func didUpdateWeather(_ weatherManager: WeatherManager, weather: WeatherModel){
+        DispatchQueue.main.async {
+            self.temperatureLabel.text = weather.temperatureString
+            self.conditionImageView.image = UIImage(systemName: weather.conditionName)
+        }
+        
+    }
+    
+    func didFailWithError(error: Error) {
+        print(error)
+    }
 }
 
+//MARK: - CLLocationMangerDelegate
+
+extension WeatherViewController: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            let lat = location.coordinate.latitude
+            let lon = location.coordinate.longitude
+            print(lat)
+            print(lon)
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error)
+    }
+}
